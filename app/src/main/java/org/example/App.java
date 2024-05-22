@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.tree.*;
 public class App {
 
   public static void main(String[] args) {
-    String input = "\"Hello, World!\"";
+    String input = "|[declare a, b, _ : int; d, e, f : array[0..2]|";
     CharStream charStreams = CharStreams.fromString(input);
 
     GCLLexer lexer = new GCLLexer(charStreams);
@@ -18,7 +18,7 @@ public class App {
       int column = token.getCharPositionInLine();
       String tokenName = GCLLexer.VOCABULARY.getSymbolicName(token.getType());
       String tokenContent = token.getText();
-      System.out.printf("%s(%s) %d %d\n", tokenName, tokenContent, line, column);
+      System.out.printf("%s(\"%s\") %d %d\n", tokenName, tokenContent, line, column);
     }
   }
 }
