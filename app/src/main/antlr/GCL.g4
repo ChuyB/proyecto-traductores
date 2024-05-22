@@ -1,6 +1,18 @@
 grammar GCL;
 
-program : TkString;
+program : block;
+
+block       : TkOBlock (stmt)* TkCBlock;
+stmt        : decl | instruct;
+decl        : TkDeclare TkId (TkComma TkId)* TkTwoPoints type (TkSemicolon TkId (TkComma TkId)* TkTwoPoints type)*;
+// Falta agregar el resto de instrucciones además de la asignación
+instruct    : assign;
+assign      : TkId TkAsig expr;
+expr        : primitive | expr bOperator expr | uOperator expr;
+primitive   : TkNum | TkString | TkTrue | TkFalse | TkId;
+bOperator   : (TkPlus | TkMinus | TkMult | TkOr | TkAnd | TkLess | TkLeq | TkGeq | TkGreater | TkEqual | TkNEqual);
+uOperator   : (TkNot);
+type        : TkInt | TkBool | TkArray;
 
 TkIf        : 'if';
 TkDo        : 'do';
@@ -14,7 +26,6 @@ fragment
 Letter      : [a-zA-Z];
 fragment 
 Digit       : [0-9];
-
 TkId        : (Letter | '_') (Letter | Digit | '_')*;
 
 TkNum       : [0-9]+;
