@@ -26,7 +26,8 @@ for         : TkFor TkId TkIn expr TkTo expr TkArrow instruct TkRof;
 condition   : boolExpr | TkGuard boolExpr;
 
 primitive   : TkNum | TkString | TkTrue | TkFalse;
-type        : TkInt | TkBool | TkArray;
+type        : TkInt | TkBool | array;
+array       : TkArray TkOBracket TkNum TkSoForth TkNum TkCBracket;
 
 TkIn        : 'in';
 TkTo        : 'to';
@@ -40,6 +41,7 @@ TkDeclare   : 'declare';
 TkInt       : 'int';
 TkBool      : 'bool';
 TkPrint     : 'print'; 
+TkArray     : 'array';
 
 fragment
 Letter      : [a-zA-Z];
@@ -49,7 +51,6 @@ TkId        : (Letter | '_') (Letter | Digit | '_')*;
 
 TkNum       : [0-9]+;
 TkString    : '"' (~["])+ '"';
-TkArray     : 'array[' TkNum '..' TkNum ']';
 
 TkTrue      : 'true';
 TkFalse     : 'false';
@@ -82,4 +83,4 @@ TkCBracket  : ']';
 TkTwoPoints : ':';
 TkConcat    : '.';
 
-Ignore      : ([ \t\r\n]+ | '//' ~[\r\n]*) -> skip;
+Ignore      : (EOF | [ \t\r\n]+ | '//' ~[\r\n]*) -> skip;
