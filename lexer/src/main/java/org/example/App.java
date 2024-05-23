@@ -5,6 +5,8 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.example.lib.ManejadorArchivo;
+import org.example.lib.ManejadorErrores;
+import org.example.lib.Printer;
 
 public class App {
 
@@ -25,15 +27,14 @@ public class App {
     // Análisis léxico del archivo
     CharStream charStreams = CharStreams.fromString(contenidosArchivo);
     GCLLexer lexer = new GCLLexer(charStreams);
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(ManejadorErrores.INSTANCE);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     tokens.fill();
 
+    // Imprime los tokens
     for (Token token : tokens.getTokens()) {
-      int line = token.getLine();
-      int column = token.getCharPositionInLine() + 1;
-      String tokenName = GCLLexer.VOCABULARY.getSymbolicName(token.getType());
-      String tokenContent = token.getText();
-      System.out.printf("%s(\"%s\") %d %d\n", tokenName, tokenContent, line, column);
+      Printer.imprimirTokens(token);
     }
   }
 }
