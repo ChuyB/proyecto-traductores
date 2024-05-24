@@ -11,7 +11,7 @@ import org.example.lib.Printer;
 public class App {
 
   public static void main(String[] args) {
-    
+
     // Verifica que se introdujo la dirección del archivo
     if (args.length != 1) {
       System.out.println("Uso: lexer <archivo>");
@@ -23,14 +23,18 @@ public class App {
     ManejadorArchivo manejador = new ManejadorArchivo(dirArchivo);
     manejador.procesarArchivo();
     String contenidosArchivo = manejador.getContenido();
-  
+
     // Análisis léxico del archivo
     CharStream charStreams = CharStreams.fromString(contenidosArchivo);
     GCLLexer lexer = new GCLLexer(charStreams);
     lexer.removeErrorListeners();
-    lexer.addErrorListener(ManejadorErrores.INSTANCE);
+    ManejadorErrores manejadorErrores = new ManejadorErrores();
+    lexer.addErrorListener(manejadorErrores);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     tokens.fill();
+
+    // Si hay errores, no contniúa con el análisis
+    if (manejadorErrores.hayErrores()) return;
 
     // Imprime los tokens
     for (Token token : tokens.getTokens()) {

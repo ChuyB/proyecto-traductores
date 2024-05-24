@@ -6,12 +6,19 @@ import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 
-/**
- * Clase que maneja los errores de sintaxis en el archivo de entrada.
- */
+/** Clase que maneja los errores de sintaxis en el archivo de entrada. */
 public class ManejadorErrores extends BaseErrorListener {
+  private boolean hayErrores;
+
+  /** Constructor de la clase. */
+  public ManejadorErrores() {
+    super();
+    hayErrores = false;
+  }
+
   /**
    * Extrae el token de la cadena de error.
+   *
    * @param e Cadena de error.
    * @return Token extraído.
    */
@@ -27,11 +34,7 @@ public class ManejadorErrores extends BaseErrorListener {
     return token;
   }
 
-  public static final ManejadorErrores INSTANCE = new ManejadorErrores();
-
-  /**
-   * Manejador que imprime el error de sintaxis.
-   */ 
+  /** Manejador que imprime el error de sintaxis. */
   @Override
   public void syntaxError(
       Recognizer<?, ?> recognizer,
@@ -43,5 +46,15 @@ public class ManejadorErrores extends BaseErrorListener {
     System.out.printf(
         "Error: Unexpected character \"%s\" in row %d, column %d\n",
         extractorToken(e.toString()), line, charPositionInLine);
+    this.hayErrores = true;
+  }
+
+  /**
+   * Verifica si hay errores en el archivo.
+   *
+   * @return True si hay errores, false en caso contrario.
+   */
+  public boolean hayErrores() {
+    return hayErrores;
   }
 }
