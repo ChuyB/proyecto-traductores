@@ -21,10 +21,10 @@ public class Printer {
     // Si el token es EOF, no se imprime
     if (tokenName.equals("EOF")) return;
 
-    if (tokenName.equals("TkId") || tokenName.equals("TkString")) {
-      tokenContent = String.format("(\"%s\")", tokenContent);
-    } else if (tokenName.equals("TkNum")) {
+    if (tokenName.equals("TkNum") || tokenName.equals("TkString")) {
       tokenContent = String.format("(%s)", tokenContent);
+    } else if (tokenName.equals("TkId")) {
+      tokenContent = String.format("(\"%s\")", tokenContent);
     } else {
       tokenContent = "";
     }

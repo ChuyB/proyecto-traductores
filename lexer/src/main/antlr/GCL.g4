@@ -7,11 +7,12 @@ stmt        : decl | instruct;
 decl        : TkDeclare TkId (TkComma TkId)* TkTwoPoints type (TkSemicolon TkId (TkComma TkId)* TkTwoPoints type)*;
 instruct    : instruct TkSemicolon instruct | assign | if | do | for | print;
 
-expr        : TkId | primitive | expr bOperator expr | uOperator expr;
+expr        : primitive | TkId | expr bOperator expr | uOperator expr;
 boolExpr    : expr boolBOp expr | uOperator expr;
 numExpr     : expr numBOp expr;
 
-bOperator   : (numBOp | boolBOp);
+bOperator   : (numBOp | boolBOp | strBOp);
+strBOp      : (TkConcat);
 boolBOp     : (TkOr | TkAnd | TkLess | TkLeq | TkGeq | TkGreater | TkEqual | TkNEqual);
 numBOp      : (TkPlus | TkMinus | TkMult);
 uOperator   : (TkNot);
@@ -29,6 +30,9 @@ primitive   : TkNum | TkString | TkTrue | TkFalse;
 type        : TkInt | TkBool | array;
 array       : TkArray TkOBracket TkNum TkSoForth TkNum TkCBracket;
 
+TkTrue      : 'true';
+TkFalse     : 'false';
+
 TkIn        : 'in';
 TkTo        : 'to';
 TkIf        : 'if';
@@ -42,6 +46,7 @@ TkInt       : 'int';
 TkBool      : 'bool';
 TkPrint     : 'print'; 
 TkArray     : 'array';
+TkSkip      : 'skip';
 
 fragment
 Letter      : [a-zA-Z];
@@ -50,10 +55,8 @@ Digit       : [0-9];
 TkId        : (Letter | '_') (Letter | Digit | '_')*;
 
 TkNum       : [0-9]+;
-TkString    : '"' (~["])+ '"';
+TkString    : '"' ( ~('\\' | '"' | [\n]) | ('\\' ["n\\]) )* '"';
 
-TkTrue      : 'true';
-TkFalse     : 'false';
 
 TkOBlock    : '|[';
 TkCBlock    : ']|';
