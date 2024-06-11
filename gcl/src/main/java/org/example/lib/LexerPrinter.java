@@ -6,7 +6,7 @@ import org.example.GCLLexer;
 /**
  * Clase que imprime un token.
  */
-public class Printer {
+public class LexerPrinter {
 
   /**
    * Imprime un token.
