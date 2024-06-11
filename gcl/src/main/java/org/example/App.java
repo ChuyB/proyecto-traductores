@@ -17,7 +17,7 @@ public class App {
 
     // Verifica que se introdujo la dirección del archivo
     if (args.length != 1) {
-      System.out.println("Uso: lexer <archivo>");
+      System.out.println("Uso: gcl <archivo>");
       System.exit(1);
     }
 
