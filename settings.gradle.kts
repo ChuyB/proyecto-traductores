@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = "proyecto-traductores"
-include("lexer")
+include("gcl")
