@@ -41,8 +41,8 @@ public class App {
     parser.setBuildParseTree(true);
     List<String> ruleNamesList = Arrays.asList(parser.getRuleNames());
     RuleContext tree = parser.program();
-    String prettyTree = ParserPrinter.toPrettyTree(tree, ruleNamesList);
-    System.out.println(prettyTree);
+    String stringTree = ParserPrinter.toStringTree(tree, ruleNamesList);
+    System.out.println(stringTree);
   }
 
 }

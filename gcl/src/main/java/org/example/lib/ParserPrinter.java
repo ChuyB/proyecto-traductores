@@ -1,52 +1,76 @@
 package org.example.lib;
 
 import java.util.List;
-import org.antlr.v4.runtime.misc.Utils;
+import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.Tree;
-import org.antlr.v4.runtime.tree.Trees;
 
-/** ParserPrinter */
+/**
+ * La clase proporciona un método para generar una representación en cadena de
+ * un árbol sintáctico
+ * abstracto (AST) creado por un parser de ANTLR.
+ */
 public class ParserPrinter {
-  /** Platform dependent end-of-line marker */
+  /** Constante que representa el salto de línea del sistema operativo. */
   public static final String Eol = System.lineSeparator();
 
-  /** The literal indent char(s) used for pretty-printing */
+  /**
+   * Constante que representa la cadena utilizada para la sangría en la salida.
+   */
   public static final String Indents = "-";
 
   private static int level;
 
-  private ParserPrinter() {}
-
   /**
-   * Pretty print out a whole tree. {@link #getNodeText} is used on the node payloads to get the
-   * text for the nodes. (Derived from Trees.toStringTree(....))
+   * Genera una representación en cadena del árbol sintáctico abstracto (AST)
+   * proporcionado.
+   *
+   * @param t         El árbol sintáctico abstracto que se desea convertir en
+   *                  cadena.
+   * @param ruleNames Una lista que contiene los nombres de las reglas utilizadas
+   *                  por el analizador
+   *                  ANTLR. El orden de los nombres de las reglas debe
+   *                  corresponder a los índices de las reglas
+   *                  en el analizador.
+   * @return La representación en cadena del árbol AST, con sangría para mejorar
+   *         la legibilidad.
    */
-  public static String toPrettyTree(final Tree t, final List<String> ruleNames) {
+  public static String toStringTree(final Tree t, final List<String> ruleNames) {
     level = 0;
-    return process(t, ruleNames).replaceAll("(?m)^\\s+$", "").replaceAll("\\r?\\n\\r?\\n", Eol);
+    return process(t, ruleNames);
   }
 
+  /*
+   * Método recursivo que recorre el árbol AST y construye la representación en
+   * cadena.
+   */
   private static String process(final Tree t, final List<String> ruleNames) {
-    if (t.getChildCount() == 0)
-      return Utils.escapeWhitespace(Trees.getNodeText(t, ruleNames), false);
     StringBuilder sb = new StringBuilder();
-    sb.append(lead(level));
     level++;
-    String s = Utils.escapeWhitespace(Trees.getNodeText(t, ruleNames), false);
-    sb.append(s + ' ');
-    for (int i = 0; i < t.getChildCount(); i++) {
-      sb.append(process(t.getChild(i), ruleNames));
+
+    if (t instanceof RuleContext) {
+      sb.append(indent(level));
+
+      RuleContext rctx = (RuleContext) t;
+      String ruleName = ruleNames.get(rctx.getRuleIndex());
+      sb.append(ruleName.substring(0, 1).toUpperCase() + ruleName.substring(1));
+
+      for (int i = 0; i < t.getChildCount(); i++) {
+        sb.append(process(t.getChild(i), ruleNames));
+      }
     }
+
     level--;
-    sb.append(lead(level));
     return sb.toString();
   }
 
-  private static String lead(int level) {
+  /*
+   * Genera la identación basado en el nivel actual de anidamiento.
+   */
+  private static String indent(int level) {
     StringBuilder sb = new StringBuilder();
     if (level > 0) {
       sb.append(Eol);
-      for (int cnt = 0; cnt < level; cnt++) {
+      for (int cnt = 0; cnt < level - 1; cnt++) {
         sb.append(Indents);
       }
     }
