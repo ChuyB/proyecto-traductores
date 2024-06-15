@@ -5,26 +5,34 @@ import org.antlr.v4.runtime.RuleContext;
 import org.antlr.v4.runtime.tree.Tree;
 
 /**
- * La clase proporciona un método para generar una representación en cadena de un árbol sintáctico
+ * La clase proporciona un método para generar una representación en cadena de
+ * un árbol sintáctico
  * abstracto (AST) creado por un parser de ANTLR.
  */
 public class ParserPrinter {
   /** Constante que representa el salto de línea del sistema operativo. */
   public static final String Eol = System.lineSeparator();
 
-  /** Constante que representa la cadena utilizada para la sangría en la salida. */
+  /**
+   * Constante que representa la cadena utilizada para la sangría en la salida.
+   */
   public static final String Indents = "-";
 
   private static int level;
 
   /**
-   * Genera una representación en cadena del árbol sintáctico abstracto (AST) proporcionado.
+   * Genera una representación en cadena del árbol sintáctico abstracto (AST)
+   * proporcionado.
    *
-   * @param t El árbol sintáctico abstracto que se desea convertir en cadena.
-   * @param ruleNames Una lista que contiene los nombres de las reglas utilizadas por el analizador
-   *     ANTLR. El orden de los nombres de las reglas debe corresponder a los índices de las reglas
-   *     en el analizador.
-   * @return La representación en cadena del árbol AST, con sangría para mejorar la legibilidad.
+   * @param t         El árbol sintáctico abstracto que se desea convertir en
+   *                  cadena.
+   * @param ruleNames Una lista que contiene los nombres de las reglas utilizadas
+   *                  por el analizador
+   *                  ANTLR. El orden de los nombres de las reglas debe
+   *                  corresponder a los índices de las reglas
+   *                  en el analizador.
+   * @return La representación en cadena del árbol AST, con sangría para mejorar
+   *         la legibilidad.
    */
   public static String toStringTree(final Tree t, final List<String> ruleNames) {
     level = 0;
@@ -45,9 +53,20 @@ public class ParserPrinter {
       if (ruleIsPrintable(ruleName)) {
         level++;
         sb.append(indent(level));
-        sb.append(ruleName.substring(0, 1).toUpperCase() + ruleName.substring(1));
+        if (!ruleName.equals("declareBody")) {
+          if (ruleName.equals("uMinus")) {
+            sb.append("Minus");
+          } else {
+            sb.append(ruleName.substring(0, 1).toUpperCase() + ruleName.substring(1));
+          }
+        }
+
         if (ruleShouldPrintValue(ruleName)) {
-          sb.append(": " + rctx.getText());
+          if (ruleName.equals("declareBody")) {
+            sb.append(formatDeclare(rctx.getText()));
+          } else {
+            sb.append(": " + rctx.getText());
+          }
         }
       }
 
@@ -78,10 +97,53 @@ public class ParserPrinter {
   }
 
   private static Boolean ruleIsPrintable(String ruleName) {
-    return !(ruleName.equals("program") || ruleName.equals("expr") || ruleName.equals("instruct"));
+    return !(ruleName.equals("program")
+        || ruleName.equals("expr")
+        || ruleName.equals("instruct")
+        || ruleName.equals("type")
+        || ruleName.equals("array")
+        || ruleName.equals("boolExpr")
+        || ruleName.equals("boolOp")
+        || ruleName.equals("numExpr")
+        || ruleName.equals("value"));
   }
 
   private static Boolean ruleShouldPrintValue(String ruleName) {
-    return ruleName.equals("ident") || ruleName.equals("literal") || ruleName.equals("string");
+    return ruleName.equals("ident")
+        || ruleName.equals("literal")
+        || ruleName.equals("string")
+        || ruleName.equals("declareBody");
+  }
+
+  public static String formatDeclare(String text) {
+    StringBuilder sb = new StringBuilder();
+    boolean isNegative = false;
+    char[] chars = text.toCharArray();
+    for (char c : chars) {
+      if (Character.isDigit(c)) {
+        if (isNegative) {
+          sb.append("Literal: -" + c);
+          isNegative = false;
+        } else {
+          sb.append("Literal: " + c);
+        }
+        continue;
+      }
+      switch (c) {
+        case ',':
+          sb.append(c + " ");
+          break;
+        case ':':
+          sb.append(" " + c + " ");
+          break;
+        case '-':
+          isNegative = true;
+          break;
+        default:
+          sb.append(c);
+          break;
+      }
+    }
+    return sb.toString();
   }
 }

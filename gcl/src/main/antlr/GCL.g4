@@ -3,56 +3,85 @@ grammar GCL;
 program : block;
 
 block       : TkOBlock (declare | (instruct | sequencing) | declare (instruct | sequencing)) TkCBlock;
-sequencing  : declStmt (TkSemicolon declStmt)* | instruct TkSemicolon instruct | sequencing TkSemicolon instruct;
-declare     : TkDeclare declStmt | TkDeclare sequencing;
-declStmt    : TkId (TkComma TkId)* TkTwoPoints type;
+sequencing  : instruct TkSemicolon instruct | sequencing TkSemicolon instruct;
+declare     : TkDeclare declareBody | TkDeclare sequencing;
 
-instruct    : block | asig | if | do | for | print;
+instruct    : block | asig | if | do | for | print | skip | declareBody;
 
-expr        : literal | string | ident | expr boolBOp expr | minus | plus;
+declareBody : TkId (TkComma TkId)* TkTwoPoints type;
+expr        : value | boolOp | numExpr;
 ident       : TkId;
-boolExpr    : expr boolBOp expr | not;
-numExpr     : expr numBOp expr | minus | plus;
+numExpr
+    : plus
+    | minus
+    | mult;
+boolOp
+    : and
+    | or
+    | boolExpr;
+boolExpr:
+    | not
+    | leq
+    | less
+    | geq
+    | greater
+    | equal
+    | neq
+    | value;
+concat
+    : (string | value) TkConcat (string | value)
+    | concat TkConcat (string | value);
 
-boolUOp     : not expr;
-concat      : (string | ident | readArray) TkConcat (string | ident | readArray) | concat TkConcat (string | ident | readArray);
-boolBOp     : (TkOr | TkAnd | TkLess | TkLeq | TkGeq | TkGreater | TkEqual | TkNEqual);
-numBOp      : (TkPlus | TkMinus | TkMult);
+not     : TkNot value | value TkNot not;
+leq     : value TkLeq value;
+less    : value TkLess value;
+geq     : value TkGeq value;
+greater : value TkGreater value;
+equal   : (value | not) TkEqual (value | not);
+neq     : value TkNEqual value;
+and
+    : (value | boolExpr) TkAnd (value | boolExpr)
+    | and TkAnd (value | boolExpr);
+or
+    : (value | boolExpr) TkOr (value | boolExpr)
+    | or TkOr (value | boolExpr);
 
-minus       : TkMinus (literal | ident) | (literal | ident) TkMinus (literal | ident) | minus TkMinus (literal | ident) | (literal | ident) TkMinus minus;
-plus        : TkPlus (literal | ident) | (literal | ident) TkPlus (literal | ident) | plus TkPlus (literal | ident) | (literal | ident) TkPlus plus;
+plus
+    : value TkPlus value
+    | plus TkPlus value
+    | plus TkPlus mult
+    | (value | mult) TkPlus (value | mult | plus);
+minus
+    : value TkMinus value
+    | minus TkMinus value
+    | minus TkMinus mult
+    | (value | plus | mult) TkMinus (value | plus | minus | mult);
+mult        : value TkMult value | mult TkMult value;
+uMinus      : TkMinus value;
 
-writeArray  : ident TkOpenPar twoPoints TkClosePar | writeArray TkOpenPar twoPoints TkClosePar | writeArray TkOBracket expr TkCBracket;
-readArray   : ident TkOBracket (ident | literal) TkCBracket | readArray TkOBracket (ident | literal) TkCBracket;
+writeArray  : ident TkOpenPar twoPoints TkClosePar | writeArray TkOpenPar twoPoints TkClosePar;
+readArray   : (ident | writeArray) TkOBracket (ident | literal) TkCBracket | readArray TkOBracket (ident | literal) TkCBracket;
 twoPoints   : expr TkTwoPoints expr;
 comma       : expr TkComma expr | comma TkComma expr;
 
-not         : TkNot (literal | ident | readArray);
-leq         : (literal | ident | readArray) TkLeq (literal | ident | readArray);
-geq         : (literal | ident | readArray) TkGeq (literal | ident | readArray);
-eq          : (literal | ident | readArray) TkEqual (literal | ident | readArray);
-neq         : (literal | ident | readArray) TkNEqual (literal | ident | readArray);
-less        : (literal | ident | readArray) TkLess (literal | ident | readArray);
-greater     : (literal | ident | readArray) TkGreater (literal | ident | readArray);
-and         : (not | leq | geq | eq | neq | less | greater | literal)  TkAnd (not | leq | geq | eq | neq | less | greater | literal) | and TkAnd (not | leq | geq | eq | neq | less | greater | literal);
-or          : (not | leq | geq | eq | neq | less | greater | literal) TkOr (not | leq | geq | eq | neq | less | greater | literal) | or TkOr (not | leq | geq | eq | neq | less | greater | literal);
-
-then        : (and | or | not | leq | geq | eq | neq | less | greater) TkArrow (instruct | sequencing);
+then        : boolOp TkArrow (instruct | sequencing);
 guard       : then TkGuard then | guard TkGuard then;
 
 in          : ident TkIn to;
 to          : expr TkTo expr;
 
 print       : TkPrint (string | ident | concat);
-asig        : ident TkAsig ((expr | comma) | writeArray);
+asig        : ident TkAsig ((expr | comma) | writeArray | readArray);
 if          : TkIf (then | guard) TkFi;
 for         : TkFor in TkArrow instruct TkRof;
-do          : TkDo then TkOd;
+do          : TkDo (then | guard) TkOd;
+skip        : TkSkip;
 
+value       : literal | ident | readArray | uMinus;
 literal     : TkNum | TkTrue | TkFalse;
 string      : TkString;
 type        : TkInt | TkBool | array;
-array       : TkArray TkOBracket TkNum TkSoForth TkNum TkCBracket;
+array       : TkArray TkOBracket (TkNum | TkMinus TkNum) TkSoForth (TkNum | TkMinus TkNum) TkCBracket;
 
 TkTrue      : 'true';
 TkFalse     : 'false';
