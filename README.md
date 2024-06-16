@@ -17,7 +17,7 @@ gradle build
 ```
 Esto creará un archivo `.jar` dentro de la raíz del proyecto en la dirección `app/build/libs/app.jar`. El archivo `app.jar` se podrá ejecutar dentro de la raíz del proyecto con:
 ```shell
-java -jar app/build/libs/app.jar 
+java -jar gcl/build/libs/app.jar 
 ```
 
 Del mismo modo, está disponible el _wrapper_ de Gradle en caso de que no se tenga la instalación global en el sistema o se prefiera usar dicho _wrapper_. Está disponible en la raíz del proyecto a través de:
