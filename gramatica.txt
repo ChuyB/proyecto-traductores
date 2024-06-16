@@ -3,101 +3,162 @@
 // Simbolo Inicial
 program -> block
 
-block -> TkOBlock (declare | (instruct | sequencing) 
-      | declare (instruct | sequencing)) TkCBlock
-sequencing -> declStmt (TkSemicolon declStmt)* 
-      | instruct TkSemicolon instruct 
-      | sequencing TkSemicolon instruct
-declare -> TkDeclare declStmt
-      | TkDeclare sequencing
-declStmt -> TkId (TkComma TkId)* TkTwoPoints type
+block -> TkOBlock (declare | (instruct | sequencing)
+      | declare (instruct | sequencing)) TkCBlock;
 
-instruct -> block 
-      | asig 
+sequencing -> instruct TkSemicolon instruct
+      | sequencing TkSemicolon instruct
+
+declare -> TkDeclare declareBody
+      | TkDeclare sequencing
+
+instruct -> block
+      | asig
       | if 
       | do 
       | for 
-      | print
+      | print 
+      | skip 
+      | declareBody
 
-expr -> literal
-      | string 
-      | ident 
-      | expr boolBOp expr 
-      | minus 
-      | plus
+declareBody -> TkId (TkComma TkId)* TkTwoPoints type
+
+expr -> value
+      | boolOp 
+      | numExpr
 ident -> TkId
-boolExpr -> expr boolBOp expr 
-      | not
-numExpr -> expr numBOp expr 
-      | minus 
-      | plus
 
-boolUOp -> not expr
-concat -> (string | ident | readArray) TkConcat (string | ident | readArray) 
-      | concat TkConcat (string | ident | readArray)
-boolBOp -> TkOr 
-      | TkAnd 
-      | TkLess 
-      | TkLeq 
-      | TkGeq 
-      | TkGreater 
-      | TkEqual 
-      | TkNEqual
-numBOp -> TkPlus 
-      | TkMinus
+numExpr -> plus
+        | minus
+        | mult
 
-minus -> TkMinus (literal | ident) 
-      | (literal | ident) TkMinus (literal | ident) 
-      | minus TkMinus (literal | ident) 
-      | (literal | ident) TkMinus minus
-plus -> TkPlus (literal | ident) 
-      | (literal | ident) TkPlus (literal | ident) 
-      | plus TkPlus (literal | ident) 
-      | (literal | ident) TkPlus plus
+boolOp -> and
+        | or
+        | (boolExpr)
+
+boolExpr -> not
+          | leq
+          | less
+          | geq
+          | greater
+          | equal
+          | notEqual
+
+concat -> (string | value) TkConcat (string | value)
+        | concat TkConcat (string | value)
+
+not       -> TkNot ((value | numExpr) | equal)
+          | TkNot not
+
+leq       -> (value | numExpr) TkLeq (value | numExpr)
+
+less      -> (value | numExpr) TkLess (value | numExpr)
+
+geq       -> (value | numExpr) TkGeq (value | numExpr)
+
+greater   -> (value | numExpr) TkGreater (value | numExpr)
+
+equal     -> (value | numExpr) TkEqual (value | numExpr | not)
+
+notEqual  -> (value | numExpr) TkNEqual (value | numExpr)
+
+and -> value TkAnd value
+    | and TkAnd (value | boolExpr | parOr)
+    | (value | boolExpr) TkAnd (value | boolExpr | parOr)
+    | parOr TkAnd (value | boolExpr | and)
+    | TkOpenPar value TkAnd value TkClosePar
+    | TkOpenPar and TkAnd (value | boolExpr | parOr) TkClosePar
+    | TkOpenPar (value | boolExpr) TkAnd (value | boolExpr | parOr) TkClosePar
+    | TkOpenPar parOr TkAnd (value | boolExpr | and) TkClosePar
+
+or -> value TkOr value
+    | or TkOr (boolExpr | value | and)
+    | (value | boolExpr | and) TkOr (value | boolOp)
+    | TkOpenPar value TkOr value TkClosePar
+    | TkOpenPar or TkOr (boolExpr | value | and) TkClosePar
+    | TkOpenPar (value | boolExpr | and) TkOr (value | boolOp) TkClosePar;
+
+parOr -> TkOpenPar or TkClosePar
+
+plus -> value TkPlus value
+      | plus TkPlus (value | mult | parNumExpr)
+      | (value | mult) TkPlus (value | mult | plus | parNumExpr)
+      | TkOpenPar value TkPlus value TkClosePar
+      | TkOpenPar plus TkPlus value TkClosePar
+      | TkOpenPar plus TkPlus mult TkClosePar
+      | TkOpenPar (value | mult) TkPlus (value | mult | plus) TkClosePar
+
+minus -> value TkMinus value
+      | minus TkMinus (value | mult | parNumExpr)
+      | (value | plus | mult) TkMinus (value | plus | minus | mult | parNumExpr)
+      | TkOpenPar value TkMinus value TkClosePar
+      | TkOpenPar minus TkMinus value TkClosePar
+      | TkOpenPar minus TkMinus mult TkClosePar
+      | TkOpenPar (value | plus | mult) TkMinus (value | plus | minus | mult) TkClosePar
+      
+parNumExpr -> TkOpenPar plus TkClosePar
+            | TkOpenPar minus TkClosePar
+            | TkOpenPar mult TkClosePar
+mult -> value TkMult value
+      | mult TkMult (value | parNumExpr)
+      | (value | parNumExpr) TkMult (value | parNumExpr)
+      | TkOpenPar value TkMult value TkClosePar
+      | TkOpenPar mult TkMult value TkClosePar
+
+uMinus -> TkMinus value
+        | TkOpenPar TkMinus value TkClosePar
 
 writeArray -> ident TkOpenPar twoPoints TkClosePar 
       | writeArray TkOpenPar twoPoints TkClosePar 
       | writeArray TkOBracket expr TkCBracket
+
 readArray -> ident TkOBracket (ident | literal) TkCBracket 
       | readArray TkOBracket (ident | literal) TkCBracket
+
 twoPoints -> expr TkTwoPoints expr
+
 comma -> expr TkComma expr 
       | comma TkComma expr
 
-not -> TkNot (literal | ident | readArray)
-leq -> (literal | ident | readArray) TkLeq (literal | ident | readArray)
-geq -> (literal | ident | readArray) TkGeq (literal | ident | readArray)
-eq -> (literal | ident | readArray) TkEqual (literal | ident | readArray)
-neq -> (literal | ident | readArray) TkNEqual (literal | ident | readArray)
-less -> (literal | ident | readArray) TkLess (literal | ident | readArray)
-greater -> (literal | ident | readArray) TkGreater (literal | ident | readArray)
-and -> (not | leq | geq | eq | neq | less | greater | literal)  TkAnd (not | leq | geq | eq | neq | less | greater | literal) 
-      | and TkAnd (not | leq | geq | eq | neq | less | greater | literal)
-or -> (not | leq | geq | eq | neq | less | greater | literal) TkOr (not | leq | geq | eq | neq | less | greater | literal) 
-      | or TkOr (not | leq | geq | eq | neq | less | greater | literal)
+then -> boolOp TkArrow (instruct | sequencing);
 
-then -> (and | or | not | leq | geq | eq | neq | less | greater) TkArrow (instruct | sequencing)
-guard -> then TkGuard then 
-      | guard TkGuard then
+guard -> then TkGuard then | guard TkGuard then;
 
 in -> ident TkIn to
+
 to -> expr TkTo expr
 
 print -> TkPrint (string | ident | concat)
-asig -> ident TkAsig ((expr | comma) | writeArray)
+
+asig -> ident TkAsig ((expr | comma) | writeArray | readArray)
+
 if -> TkIf (then | guard) TkFi
+
 for -> TkFor in TkArrow instruct TkRof
-do -> TkDo then TkOd
+
+do -> TkDo (then | guard) TkOd
+
+skip -> TkSkip
+
+value -> literal
+      | ident
+      | readArray
+      | uMinus
 
 literal -> TkNum 
       | TkTrue 
       | TkFalse
+
 string -> TkString
+
 type -> TkInt 
       | TkBool 
       | array
-array -> TkArray TkOBracket TkNum TkSoForth TkNum TkCBracket
 
+array -> TkArray TkOBracket (TkNum | TkMinus TkNum) TkSoForth (TkNum | TkMinus TkNum) TkCBracket;
+
+
+------------------- ## TOKENS TERMINALES ## -------------------
 TkTrue -> 'true'
 TkFalse -> 'false'
 
