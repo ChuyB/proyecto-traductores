@@ -7,11 +7,11 @@ import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Recognizer;
 
 /** Clase que maneja los errores de sintaxis en el archivo de entrada. */
-public class ManejadorErrores extends BaseErrorListener {
+public class ManejadorErrorLexer extends BaseErrorListener {
   private boolean hayErrores;
 
   /** Constructor de la clase. */
-  public ManejadorErrores() {
+  public ManejadorErrorLexer() {
     super();
     hayErrores = false;
   }

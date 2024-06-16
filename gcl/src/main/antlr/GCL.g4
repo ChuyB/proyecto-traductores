@@ -18,46 +18,73 @@ numExpr
 boolOp
     : and
     | or
-    | boolExpr;
-boolExpr:
-    | not
+    | (boolExpr);
+boolExpr
+    : not
     | leq
     | less
     | geq
     | greater
     | equal
-    | neq
-    | value;
+    | notEqual;
 concat
     : (string | value) TkConcat (string | value)
     | concat TkConcat (string | value);
 
-not     : TkNot value | value TkNot not;
-leq     : value TkLeq value;
-less    : value TkLess value;
-geq     : value TkGeq value;
-greater : value TkGreater value;
-equal   : (value | not) TkEqual (value | not);
-neq     : value TkNEqual value;
+not     : TkNot ((value | numExpr) | equal) | TkNot not;
+leq     : (value | numExpr) TkLeq (value | numExpr);
+less    : (value | numExpr) TkLess (value | numExpr);
+geq     : (value | numExpr) TkGeq (value | numExpr);
+greater : (value | numExpr) TkGreater (value | numExpr);
+equal   : (value | numExpr) TkEqual (value | numExpr | not);
+notEqual: (value | numExpr) TkNEqual (value | numExpr);
 and
-    : (value | boolExpr) TkAnd (value | boolExpr)
-    | and TkAnd (value | boolExpr);
+    : value TkAnd value
+    | and TkAnd (value | boolExpr | parOr)
+    | (value | boolExpr) TkAnd (value | boolExpr | parOr)
+    | parOr TkAnd (value | boolExpr | and)
+    | TkOpenPar value TkAnd value TkClosePar
+    | TkOpenPar and TkAnd (value | boolExpr | parOr) TkClosePar
+    | TkOpenPar (value | boolExpr) TkAnd (value | boolExpr | parOr) TkClosePar
+    | TkOpenPar parOr TkAnd (value | boolExpr | and) TkClosePar;
 or
-    : (value | boolExpr) TkOr (value | boolExpr)
-    | or TkOr (value | boolExpr);
+    : value TkOr value
+    | or TkOr (boolExpr | value | and)
+    | (value | boolExpr | and) TkOr (value | boolOp)
+    | TkOpenPar value TkOr value TkClosePar
+    | TkOpenPar or TkOr (boolExpr | value | and) TkClosePar
+    | TkOpenPar (value | boolExpr | and) TkOr (value | boolOp) TkClosePar;
+parOr   : TkOpenPar or TkClosePar;
 
 plus
     : value TkPlus value
-    | plus TkPlus value
-    | plus TkPlus mult
-    | (value | mult) TkPlus (value | mult | plus);
+    | plus TkPlus (value | mult | parNumExpr)
+    | (value | mult) TkPlus (value | mult | plus | parNumExpr)
+    | TkOpenPar value TkPlus value TkClosePar
+    | TkOpenPar plus TkPlus value TkClosePar
+    | TkOpenPar plus TkPlus mult TkClosePar
+    | TkOpenPar (value | mult) TkPlus (value | mult | plus) TkClosePar;
 minus
     : value TkMinus value
-    | minus TkMinus value
-    | minus TkMinus mult
-    | (value | plus | mult) TkMinus (value | plus | minus | mult);
-mult        : value TkMult value | mult TkMult value;
-uMinus      : TkMinus value;
+    | minus TkMinus (value | mult | parNumExpr)
+    | (value | plus | mult) TkMinus (value | plus | minus | mult | parNumExpr)
+    | TkOpenPar value TkMinus value TkClosePar
+    | TkOpenPar minus TkMinus value TkClosePar
+    | TkOpenPar minus TkMinus mult TkClosePar
+    | TkOpenPar (value | plus | mult) TkMinus (value | plus | minus | mult) TkClosePar;
+parNumExpr
+    : TkOpenPar plus TkClosePar
+    | TkOpenPar minus TkClosePar
+    | TkOpenPar mult TkClosePar;
+mult
+    : value TkMult value
+    | mult TkMult (value | parNumExpr)
+    | (value | parNumExpr) TkMult (value | parNumExpr)
+    | TkOpenPar value TkMult value TkClosePar
+    | TkOpenPar mult TkMult value TkClosePar;
+uMinus
+    : TkMinus value
+    | TkOpenPar TkMinus value TkClosePar;
 
 writeArray  : ident TkOpenPar twoPoints TkClosePar | writeArray TkOpenPar twoPoints TkClosePar;
 readArray   : (ident | writeArray) TkOBracket (ident | literal) TkCBracket | readArray TkOBracket (ident | literal) TkCBracket;

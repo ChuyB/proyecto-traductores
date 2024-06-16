@@ -8,7 +8,8 @@ import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.RuleContext;
 import org.example.lib.ManejadorArchivo;
-import org.example.lib.ManejadorErrores;
+import org.example.lib.ManejadorErrorLexer;
+import org.example.lib.ManejadorErrorParser;
 import org.example.lib.ParserPrinter;
 
 public class App {
@@ -31,16 +32,28 @@ public class App {
     CharStream charStreams = CharStreams.fromString(contenidosArchivo);
     GCLLexer lexer = new GCLLexer(charStreams);
     lexer.removeErrorListeners();
-    ManejadorErrores manejadorErrores = new ManejadorErrores();
-    lexer.addErrorListener(manejadorErrores);
+    ManejadorErrorLexer manejadorErrorLexer = new ManejadorErrorLexer();
+    lexer.addErrorListener(manejadorErrorLexer);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
-    // Si hay errores, no contniúa con el análisis
-    if (manejadorErrores.hayErrores()) return;
+    // Si hay errores, no continúa con el análisis
+    if (manejadorErrorLexer.hayErrores()) return;
 
+    // Parser del archivo
     GCLParser parser = new GCLParser(tokens);
+
+    // Añade el manejador de errores al parser
+    parser.removeErrorListeners();
+    ManejadorErrorParser manejadorErroresParser = new ManejadorErrorParser();
+    parser.addErrorListener(manejadorErroresParser);
+
     parser.setBuildParseTree(true);
     List<String> ruleNamesList = Arrays.asList(parser.getRuleNames());
     RuleContext tree = parser.program();
+
+    // Si hay errores, no continúa con el análisis
+    if (manejadorErroresParser.hayErrores()) return;
+
+    // Imprime el árbol de análisis
     String stringTree = ParserPrinter.toStringTree(tree, ruleNamesList);
     System.out.println(stringTree);
   }

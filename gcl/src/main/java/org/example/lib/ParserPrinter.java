@@ -105,7 +105,10 @@ public class ParserPrinter {
         || ruleName.equals("boolExpr")
         || ruleName.equals("boolOp")
         || ruleName.equals("numExpr")
-        || ruleName.equals("value"));
+        || ruleName.equals("value")
+        || ruleName.equals("parAnd")
+        || ruleName.equals("parOr")
+        || ruleName.equals("parNumExpr"));
   }
 
   private static Boolean ruleShouldPrintValue(String ruleName) {
