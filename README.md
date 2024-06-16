@@ -15,6 +15,10 @@ Para poder compilar y empaquetar el archivo `.jar` se debe ejecutar la acción d
 ```shell
 gradle build
 ```
+También se puede utilizar el _wrapper_ de Gradle: `./gradlew` que se encuentra en la raíz del proyecto. Para la compilación se podrá ejecutar:
+```shell
+./gradlew assemble
+```
 Esto creará un archivo `.jar` dentro de la raíz del proyecto en la dirección `app/build/libs/app.jar`. El archivo `app.jar` se podrá ejecutar dentro de la raíz del proyecto con:
 ```shell
 java -jar gcl/build/libs/app.jar 
