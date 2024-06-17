@@ -55,7 +55,7 @@ public class App {
 
     // Imprime el árbol de análisis
     String stringTree = ParserPrinter.toStringTree(tree, ruleNamesList);
-    System.out.println(stringTree);
+    System.out.println(stringTree.substring(2));
   }
 
 }
