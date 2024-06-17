@@ -54,7 +54,9 @@ public class ParserPrinter {
         level++;
         sb.append(indent(level));
         if (!ruleName.equals("declareBody")) {
-          if (ruleName.equals("uMinus")) {
+          if (ruleName.equals("skip")) {
+            sb.append("skip");
+          } else if (ruleName.equals("uMinus")) {
             sb.append("Minus");
           } else {
             sb.append(ruleName.substring(0, 1).toUpperCase() + ruleName.substring(1));
