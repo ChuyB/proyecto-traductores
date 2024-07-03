@@ -72,7 +72,8 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       exprType = visit(ctx.readArray());
     }
 
-    if (exprType == null || identType == null) return null;
+    if (exprType == null || identType == null)
+      return null;
 
     if (identType.equals(exprType)) {
       return identType;
@@ -196,7 +197,8 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
   public Type visitComma(GCLParser.CommaContext ctx) {
     if (ctx.comma() != null) {
       ArrayType leftSize = (ArrayType) visit(ctx.comma());
-      if (leftSize == null) return null;
+      if (leftSize == null)
+        return null;
 
       Type expr1 = visit(ctx.expr(0));
       if (!(expr1 instanceof IntType)) {
@@ -272,6 +274,355 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
   }
 
   @Override
+  public Type visitAnd(GCLParser.AndContext ctx) {
+    Type leftType;
+    Type rightType;
+
+    if (ctx.and() != null) {
+      leftType = visit(ctx.and());
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.boolExpr(0) != null) {
+        rightType = visit(ctx.boolExpr(0));
+      } else {
+        rightType = visit(ctx.parOr());
+      }
+    } else if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else if (ctx.boolExpr(0) != null) {
+        rightType = visit(ctx.boolExpr(0));
+      } else if (ctx.and() != null) {
+        rightType = visit(ctx.and());
+      } else {
+        rightType = visit(ctx.parOr());
+      }
+    } else {
+      leftType = visit(ctx.boolExpr(0));
+      if (ctx.boolExpr(1) != null) {
+        rightType = visit(ctx.boolExpr(1));
+      } else if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.and() != null) {
+        rightType = visit(ctx.and());
+      } else {
+        rightType = visit(ctx.parOr());
+      }
+    }
+
+    if (leftType == null || rightType == null)
+      return null;
+
+    if (!(leftType instanceof BoolType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not boolean or can't be casted to boolean",
+              leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof BoolType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not boolean or can't be casted to boolean",
+              rightType.getType()));
+      return null;
+    }
+
+    return new BoolType();
+  }
+
+  @Override
+  public Type visitBoolExpr(GCLParser.BoolExprContext ctx) {
+    return visitChildren(ctx);
+  }
+
+  @Override
+  public Type visitBoolOp(GCLParser.BoolOpContext ctx) {
+    return visitChildren(ctx);
+  }
+
+  @Override
+  public Type visitOr(GCLParser.OrContext ctx) {
+    Type leftType;
+    Type rightType;
+
+    if (ctx.or() != null) {
+      leftType = visit(ctx.or());
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.boolExpr() != null) {
+        rightType = visit(ctx.boolExpr());
+      } else {
+        rightType = visit(ctx.and());
+      }
+    } else if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else if (ctx.boolExpr() != null) {
+        rightType = visit(ctx.boolExpr());
+      } else if (ctx.or() != null) {
+        rightType = visit(ctx.or());
+      } else {
+        rightType = visit(ctx.and());
+      }
+    } else {
+      leftType = visit(ctx.boolExpr());
+      if (ctx.boolExpr() != null) {
+        rightType = visit(ctx.boolExpr());
+      } else if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.or() != null) {
+        rightType = visit(ctx.or());
+      } else {
+        rightType = visit(ctx.and());
+      }
+    }
+
+    if (leftType == null || rightType == null)
+      return null;
+
+    if (!(leftType instanceof BoolType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not boolean or can't be casted to boolean",
+              leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof BoolType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not boolean or can't be casted to boolean",
+              rightType.getType()));
+      return null;
+    }
+
+    return new BoolType();
+  }
+
+  @Override
+  public Type visitLeq(GCLParser.LeqContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else {
+        rightType = visit(ctx.numExpr(0));
+      }
+    } else {
+      leftType = visit(ctx.numExpr(0));
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else {
+        rightType = visit(ctx.numExpr(1));
+      }
+    }
+
+    if (leftType == null || rightType == null)
+      return null;
+
+    if (!(leftType instanceof IntType || leftType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not int or can't be casted to int", leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType || rightType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not int or can't be casted to int", rightType.getType()));
+      return null;
+    }
+
+    return new BoolType();
+  }
+
+  @Override
+  public Type visitLess(GCLParser.LessContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else {
+        rightType = visit(ctx.numExpr(0));
+      }
+    } else {
+      leftType = visit(ctx.numExpr(0));
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else {
+        rightType = visit(ctx.numExpr(1));
+      }
+    }
+
+    if (leftType == null || rightType == null)
+      return null;
+
+    if (!(leftType instanceof IntType || leftType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not int or can't be casted to int", leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType || rightType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not int or can't be casted to int", rightType.getType()));
+      return null;
+    }
+
+    return new BoolType();
+  }
+
+  @Override
+  public Type visitNumExpr(GCLParser.NumExprContext ctx) {
+    return visitChildren(ctx);
+  }
+
+  @Override
+  public Type visitGeq(GCLParser.GeqContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else {
+        rightType = visit(ctx.numExpr(0));
+      }
+    } else {
+      leftType = visit(ctx.numExpr(0));
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else {
+        rightType = visit(ctx.numExpr(1));
+      }
+    }
+
+    if (leftType == null || rightType == null)
+      return null;
+
+    if (!(leftType instanceof IntType || leftType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not int or can't be casted to int", leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType || rightType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not int or can't be casted to int", rightType.getType()));
+      return null;
+    }
+
+    return new BoolType();
+  }
+
+  @Override
+  public Type visitGreater(GCLParser.GreaterContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else {
+        rightType = visit(ctx.numExpr(0));
+      }
+    } else {
+      leftType = visit(ctx.numExpr(0));
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else {
+        rightType = visit(ctx.numExpr(1));
+      }
+    }
+
+    if (leftType == null || rightType == null)
+      return null;
+
+    if (!(leftType instanceof IntType || leftType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not int or can't be casted to int", leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType || rightType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not int or can't be casted to int", rightType.getType()));
+      return null;
+    }
+
+    return new BoolType();
+  }
+
+  @Override
+  public Type visitEqual(GCLParser.EqualContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else {
+        rightType = visit(ctx.numExpr(0));
+      }
+    } else {
+      leftType = visit(ctx.numExpr(0));
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else {
+        rightType = visit(ctx.numExpr(1));
+      }
+    }
+
+    if (leftType == null || rightType == null)
+      return null;
+
+    if (!(leftType instanceof IntType || leftType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not int or can't be casted to int", leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType || rightType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not int or can't be casted to int", rightType.getType()));
+      return null;
+    }
+
+    return new BoolType();
+  }
+
+  @Override
   public Type visitPlus(GCLParser.PlusContext ctx) {
     Type leftType;
     Type rightType;
@@ -308,7 +659,8 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null) return null;
+    if (leftType == null || rightType == null)
+      return null;
 
     if (!(leftType instanceof IntType)) {
       errorListener.reportError(
@@ -387,7 +739,8 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null) return null;
+    if (leftType == null || rightType == null)
+      return null;
 
     if (!(leftType instanceof IntType)) {
       errorListener.reportError(
@@ -437,7 +790,8 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null) return null;
+    if (leftType == null || rightType == null)
+      return null;
 
     if (!(leftType instanceof IntType)) {
       errorListener.reportError(
@@ -474,6 +828,50 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       errorListener.reportError(ctx, "Unary minus can only be applied to integers");
       return null;
     }
+  }
+
+  @Override
+  public Type visitNotEqual(GCLParser.NotEqualContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else {
+        rightType = visit(ctx.numExpr(0));
+      }
+    } else {
+      leftType = visit(ctx.numExpr(0));
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else {
+        rightType = visit(ctx.numExpr(1));
+      }
+    }
+
+    if (leftType == null || rightType == null)
+      return null;
+
+    if (!(leftType instanceof IntType || leftType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not string or can't be casted to string",
+              leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType || rightType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not string or can't be casted to string",
+              rightType.getType()));
+      return null;
+    }
+
+    return new IntType();
   }
 
   @Override
