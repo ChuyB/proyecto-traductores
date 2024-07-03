@@ -346,6 +346,27 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
   }
 
   @Override
+  public Type visitNot(GCLParser.NotContext ctx) {
+    Type value;
+    if (ctx.not() != null) {
+      value = visit(ctx.not());
+    } else if (ctx.value() != null) {
+      value = visit(ctx.value());
+    } else if (ctx.numExpr() != null){
+      value = visit(ctx.numExpr());
+    } else {
+      value = visit(ctx.equal());
+    }
+
+    if (value instanceof BoolType) {
+      return value;
+    } else {
+      errorListener.reportError(ctx, "Operator \"not\" can only be applied to booleans");
+      return null;
+    }
+  }
+
+  @Override
   public Type visitOr(GCLParser.OrContext ctx) {
     Type leftType;
     Type rightType;
