@@ -89,7 +89,7 @@ uMinus
 writeArray  : ident TkOpenPar twoPoints TkClosePar | writeArray TkOpenPar twoPoints TkClosePar;
 readArray   : (ident | writeArray) TkOBracket (ident | literal) TkCBracket | readArray TkOBracket (ident | literal) TkCBracket;
 twoPoints   : expr TkTwoPoints expr;
-comma       : expr TkComma expr | comma TkComma expr;
+comma       : comma TkComma expr | expr TkComma expr;
 
 then        : boolOp TkArrow (instruct | sequencing);
 guard       : then TkGuard then | guard TkGuard then;

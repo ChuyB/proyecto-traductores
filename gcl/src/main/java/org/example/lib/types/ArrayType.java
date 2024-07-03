@@ -18,6 +18,18 @@ public class ArrayType implements Type {
     endIndex = length - 1;
   }
 
+  public int getLength() {
+    return length;
+  }
+
+  public int getStartIndex() {
+    return startIndex;
+  }
+
+  public int getEndIndex() {
+    return endIndex;
+  }
+
   public boolean equals(Type type) {
     return type instanceof ArrayType && ((ArrayType) type).length == length;
   }

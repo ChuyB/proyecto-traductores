@@ -72,7 +72,20 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       exprType = visit(ctx.readArray());
     }
 
+    if (exprType == null || identType == null) return null;
+
     if (identType.equals(exprType)) {
+      return identType;
+    }
+
+    if (identType instanceof ArrayType && exprType instanceof ArrayType) {
+      int identLenght = ((ArrayType) identType).getLength();
+      int exprLength = ((ArrayType) exprType).getLength();
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Type mismatch: Array of length %d can not be assigned to array of length %d",
+              exprLength, identLenght));
       return identType;
     }
 
@@ -80,14 +93,392 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
         ctx,
         String.format(
             "Type mismatch: %s can not be assigned to variable \"%s\" of type %s",
-            exprType, ctx.ident().getText(), identType.getType()));
-    return null;
+            exprType.getType(), ctx.ident().getText(), identType.getType()));
+    return identType;
+  }
+
+  @Override
+  public Type visitWriteArray(GCLParser.WriteArrayContext ctx) {
+    Type generalType;
+    if (ctx.writeArray() != null) {
+      generalType = visit(ctx.writeArray());
+    } else {
+      generalType = visit(ctx.ident());
+    }
+    if (!(generalType instanceof ArrayType)) {
+      errorListener.reportError(
+          ctx, String.format("Variable \"%s\" is not an array", ctx.ident().getText()));
+      return generalType;
+    }
+    ArrayType identType = (ArrayType) generalType;
+    visit(ctx.twoPoints());
+    int index = Integer.parseInt(ctx.twoPoints().expr(0).getText());
+    if (index < identType.getStartIndex() || index > identType.getEndIndex()) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Index %d is out of bounds for array with bounds %d to %d",
+              index, identType.getStartIndex(), identType.getEndIndex()));
+    }
+    return identType;
+  }
+
+  @Override
+  public Type visitReadArray(GCLParser.ReadArrayContext ctx) {
+    Type leftType;
+    Type elementType;
+    if (ctx.writeArray() != null) {
+      leftType = visit(ctx.writeArray());
+    } else if (ctx.readArray() != null) {
+      // leftType = visit(ctx.readArray());
+      leftType = new IntType();
+    } else {
+      leftType = visit(ctx.ident(0));
+    }
+
+    if (!(leftType instanceof ArrayType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Can't read a value in element of type %s that is not an array", leftType.getType()));
+      return null;
+    }
+
+    int index;
+    if (ctx.literal() != null) {
+      elementType = visit(ctx.literal());
+      index = Integer.parseInt(ctx.literal().getText());
+    } else {
+      elementType = visit(ctx.ident(1));
+      index = Integer.parseInt(ctx.ident(1).getText());
+    }
+
+    if (!(elementType instanceof IntType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Array index must be an integer, not an element of type %s", elementType.getType()));
+      return null;
+    }
+
+    if (index < ((ArrayType) leftType).getStartIndex()
+        || index > ((ArrayType) leftType).getEndIndex()) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Index %d is out of bounds for array with bounds %d to %d",
+              index, ((ArrayType) leftType).getStartIndex(), ((ArrayType) leftType).getEndIndex()));
+    }
+
+    return new IntType();
+  }
+
+  @Override
+  public Type visitTwoPoints(GCLParser.TwoPointsContext ctx) {
+    Type expr1 = visit(ctx.expr(0));
+    Type expr2 = visit(ctx.expr(1));
+
+    if (!(expr1 instanceof IntType)) {
+      errorListener.reportError(
+          ctx, String.format("Index \"%s\" should be an int", ctx.expr(0).getText()));
+      return null;
+    }
+    if (!(expr2 instanceof IntType)) {
+      errorListener.reportError(
+          ctx, String.format("Index \"%s\" should be an int", ctx.expr(1).getText()));
+      return null;
+    }
+
+    return expr1;
   }
 
   @Override
   public Type visitComma(GCLParser.CommaContext ctx) {
-    int size = ctx.expr().size();
-    return new ArrayType(size);
+    if (ctx.comma() != null) {
+      ArrayType leftSize = (ArrayType) visit(ctx.comma());
+      if (leftSize == null) return null;
+
+      Type expr1 = visit(ctx.expr(0));
+      if (!(expr1 instanceof IntType)) {
+        errorListener.reportError(
+            ctx, String.format("Index \"%s\" should be an int", ctx.expr(0).getText()));
+        return null;
+      }
+      return new ArrayType(1 + leftSize.getLength());
+    } else {
+      Type expr1 = visit(ctx.expr(0));
+      Type expr2 = visit(ctx.expr(1));
+      if (!(expr1 instanceof IntType)) {
+        errorListener.reportError(
+            ctx, String.format("Index \"%s\" should be an int", ctx.expr(0).getText()));
+        return null;
+      }
+      if (!(expr2 instanceof IntType)) {
+        errorListener.reportError(
+            ctx, String.format("Index \"%s\" should be an int", ctx.expr(1).getText()));
+        return null;
+      }
+
+      return new ArrayType(2);
+    }
+  }
+
+  @Override
+  public Type visitConcat(GCLParser.ConcatContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.concat() != null) {
+      leftType = visit(ctx.concat());
+      if (ctx.string(0) != null) {
+        rightType = visit(ctx.string(0));
+      } else {
+        rightType = visit(ctx.value(0));
+      }
+    } else if (ctx.string(0) != null) {
+      leftType = visit(ctx.string(0));
+      if (ctx.string(1) != null) {
+        rightType = visit(ctx.string(1));
+      } else {
+        rightType = visit(ctx.value(0));
+      }
+    } else {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else {
+        rightType = visit(ctx.string(0));
+      }
+    }
+
+    if (!(leftType instanceof IntType || leftType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not string or can't be casted to string",
+              leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType || rightType instanceof StringType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not string or can't be casted to string",
+              rightType.getType()));
+      return null;
+    }
+
+    return new StringType();
+  }
+
+  @Override
+  public Type visitPlus(GCLParser.PlusContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.plus() != null) {
+      leftType = visit(ctx.plus());
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.mult(0) != null) {
+        rightType = visit(ctx.mult(0));
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    } else if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else if (ctx.mult(0) != null) {
+        rightType = visit(ctx.mult(0));
+      } else if (ctx.plus() != null) {
+        rightType = visit(ctx.plus());
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    } else {
+      leftType = visit(ctx.mult(0));
+      if (ctx.mult(1) != null) {
+        rightType = visit(ctx.mult(1));
+      } else if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.plus() != null) {
+        rightType = visit(ctx.plus());
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    }
+
+    if (leftType == null || rightType == null) return null;
+
+    if (!(leftType instanceof IntType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not an integer or can't be casted to integer",
+              leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not an integer or can't be casted to integer",
+              rightType.getType()));
+      return null;
+    }
+
+    return new IntType();
+  }
+
+  @Override
+  public Type visitMinus(GCLParser.MinusContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.minus() != null) {
+      leftType = visit(ctx.minus());
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.mult(0) != null) {
+        rightType = visit(ctx.mult(0));
+      } else if (ctx.plus(0) != null) {
+        rightType = visit(ctx.plus(0));
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    } else if (ctx.plus(0) != null) {
+      leftType = visit(ctx.plus(0));
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.mult(0) != null) {
+        rightType = visit(ctx.mult(0));
+      } else if (ctx.plus(1) != null) {
+        rightType = visit(ctx.plus(1));
+      } else if (ctx.minus() != null) {
+        rightType = visit(ctx.minus());
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    } else if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else if (ctx.mult(0) != null) {
+        rightType = visit(ctx.mult(0));
+      } else if (ctx.minus() != null) {
+        rightType = visit(ctx.minus());
+      } else if (ctx.plus(0) != null) {
+        rightType = visit(ctx.plus(0));
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    } else {
+      leftType = visit(ctx.mult(0));
+      if (ctx.mult(1) != null) {
+        rightType = visit(ctx.mult(1));
+      } else if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.minus() != null) {
+        rightType = visit(ctx.minus());
+      } else if (ctx.plus(0) != null) {
+        rightType = visit(ctx.plus(0));
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    }
+
+    if (leftType == null || rightType == null) return null;
+
+    if (!(leftType instanceof IntType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not an integer or can't be casted to integer",
+              leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not an integer or can't be casted to integer",
+              rightType.getType()));
+      return null;
+    }
+
+    return new IntType();
+  }
+
+  @Override
+  public Type visitMult(GCLParser.MultContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.mult() != null) {
+      leftType = visit(ctx.mult());
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else {
+        rightType = visit(ctx.parNumExpr(0));
+      }
+    } else if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else {
+        rightType = visit(ctx.parNumExpr(0));
+      }
+    } else {
+      leftType = visit(ctx.parNumExpr(0));
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else {
+        rightType = visit(ctx.parNumExpr(1));
+      }
+    }
+
+    if (leftType == null || rightType == null) return null;
+
+    if (!(leftType instanceof IntType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not an integer or can't be casted to integer",
+              leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType)) {
+      errorListener.reportError(
+          ctx,
+          String.format(
+              "Expression of type %s is not an integer or can't be casted to integer",
+              rightType.getType()));
+      return null;
+    }
+
+    return new IntType();
+  }
+
+  @Override
+  public Type visitParNumExpr(GCLParser.ParNumExprContext ctx) {
+    return visitChildren(ctx);
+  }
+
+  @Override
+  public Type visitUMinus(GCLParser.UMinusContext ctx) {
+    Type value = visit(ctx.value());
+    if (value instanceof IntType) {
+      return value;
+    } else {
+      errorListener.reportError(ctx, "Unary minus can only be applied to integers");
+      return null;
+    }
+  }
+
+  @Override
+  public Type visitExpr(GCLParser.ExprContext ctx) {
+    return visitChildren(ctx);
   }
 
   @Override
@@ -108,6 +499,11 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
     } else {
       return new StringType();
     }
+  }
+
+  @Override
+  public Type visitValue(GCLParser.ValueContext ctx) {
+    return visitChildren(ctx);
   }
 
   @Override
