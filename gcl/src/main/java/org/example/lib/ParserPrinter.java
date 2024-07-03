@@ -2,6 +2,7 @@ package org.example.lib;
 
 import java.util.List;
 import org.antlr.v4.runtime.RuleContext;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.Tree;
 
 /**
@@ -49,6 +50,7 @@ public class ParserPrinter {
     if (t instanceof RuleContext) {
       RuleContext rctx = (RuleContext) t;
       String ruleName = ruleNames.get(rctx.getRuleIndex());
+      int blockNumber = 0;
 
       if (ruleIsPrintable(ruleName)) {
         level++;
@@ -69,6 +71,13 @@ public class ParserPrinter {
           } else {
             sb.append(": " + rctx.getText());
           }
+        }
+
+        if (ruleName.equals("block")) {
+          TypeChekingVisitor visitor = new TypeChekingVisitor();
+          visitor.visit((ParseTree) t);
+          sb.append(visitor.toStringBlockSymbols(blockNumber, level, Indents));
+          blockNumber++;
         }
       }
 
