@@ -72,8 +72,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       exprType = visit(ctx.readArray());
     }
 
-    if (exprType == null || identType == null)
-      return null;
+    if (exprType == null || identType == null) return null;
 
     if (identType.equals(exprType)) {
       return identType;
@@ -145,13 +144,12 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
     }
 
-    int index;
+    Integer index = null;
     if (ctx.literal() != null) {
       elementType = visit(ctx.literal());
       index = Integer.parseInt(ctx.literal().getText());
     } else {
       elementType = visit(ctx.ident(1));
-      index = Integer.parseInt(ctx.ident(1).getText());
     }
 
     if (!(elementType instanceof IntType)) {
@@ -161,6 +159,8 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
               "Array index must be an integer, not an element of type %s", elementType.getType()));
       return null;
     }
+
+    if (index == null) return new IntType();
 
     if (index < ((ArrayType) leftType).getStartIndex()
         || index > ((ArrayType) leftType).getEndIndex()) {
@@ -197,8 +197,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
   public Type visitComma(GCLParser.CommaContext ctx) {
     if (ctx.comma() != null) {
       ArrayType leftSize = (ArrayType) visit(ctx.comma());
-      if (leftSize == null)
-        return null;
+      if (leftSize == null) return null;
 
       Type expr1 = visit(ctx.expr(0));
       if (!(expr1 instanceof IntType)) {
@@ -311,8 +310,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof BoolType)) {
       errorListener.reportError(
@@ -352,7 +350,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       value = visit(ctx.not());
     } else if (ctx.value() != null) {
       value = visit(ctx.value());
-    } else if (ctx.numExpr() != null){
+    } else if (ctx.numExpr() != null) {
       value = visit(ctx.numExpr());
     } else {
       value = visit(ctx.equal());
@@ -404,8 +402,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof BoolType)) {
       errorListener.reportError(
@@ -448,8 +445,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType)) {
       errorListener.reportError(
@@ -490,8 +486,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType)) {
       errorListener.reportError(
@@ -537,8 +532,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType)) {
       errorListener.reportError(
@@ -579,8 +573,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType)) {
       errorListener.reportError(
@@ -621,8 +614,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType)) {
       errorListener.reportError(
@@ -644,11 +636,11 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
   }
 
   @Override
-  public Type visitPlus(GCLParser.PlusContext ctx) {
+  public Type visitMinus(GCLParser.MinusContext ctx) {
     Type leftType;
     Type rightType;
-    if (ctx.plus() != null) {
-      leftType = visit(ctx.plus());
+    if (ctx.minus() != null) {
+      leftType = visit(ctx.minus());
       if (ctx.value(0) != null) {
         rightType = visit(ctx.value(0));
       } else if (ctx.mult(0) != null) {
@@ -662,8 +654,8 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
         rightType = visit(ctx.value(1));
       } else if (ctx.mult(0) != null) {
         rightType = visit(ctx.mult(0));
-      } else if (ctx.plus() != null) {
-        rightType = visit(ctx.plus());
+      } else if (ctx.minus() != null) {
+        rightType = visit(ctx.minus());
       } else {
         rightType = visit(ctx.parNumExpr());
       }
@@ -673,15 +665,14 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
         rightType = visit(ctx.mult(1));
       } else if (ctx.value(0) != null) {
         rightType = visit(ctx.value(0));
-      } else if (ctx.plus() != null) {
-        rightType = visit(ctx.plus());
+      } else if (ctx.minus() != null) {
+        rightType = visit(ctx.minus());
       } else {
         rightType = visit(ctx.parNumExpr());
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof IntType)) {
       errorListener.reportError(
@@ -705,30 +696,30 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
   }
 
   @Override
-  public Type visitMinus(GCLParser.MinusContext ctx) {
+  public Type visitPlus(GCLParser.PlusContext ctx) {
     Type leftType;
     Type rightType;
-    if (ctx.minus() != null) {
-      leftType = visit(ctx.minus());
+    if (ctx.plus() != null) {
+      leftType = visit(ctx.plus());
       if (ctx.value(0) != null) {
         rightType = visit(ctx.value(0));
       } else if (ctx.mult(0) != null) {
         rightType = visit(ctx.mult(0));
-      } else if (ctx.plus(0) != null) {
-        rightType = visit(ctx.plus(0));
+      } else if (ctx.minus(0) != null) {
+        rightType = visit(ctx.minus(0));
       } else {
         rightType = visit(ctx.parNumExpr());
       }
-    } else if (ctx.plus(0) != null) {
-      leftType = visit(ctx.plus(0));
+    } else if (ctx.minus(0) != null) {
+      leftType = visit(ctx.minus(0));
       if (ctx.value(0) != null) {
         rightType = visit(ctx.value(0));
       } else if (ctx.mult(0) != null) {
         rightType = visit(ctx.mult(0));
-      } else if (ctx.plus(1) != null) {
-        rightType = visit(ctx.plus(1));
-      } else if (ctx.minus() != null) {
-        rightType = visit(ctx.minus());
+      } else if (ctx.minus(1) != null) {
+        rightType = visit(ctx.minus(1));
+      } else if (ctx.plus() != null) {
+        rightType = visit(ctx.plus());
       } else {
         rightType = visit(ctx.parNumExpr());
       }
@@ -738,10 +729,10 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
         rightType = visit(ctx.value(1));
       } else if (ctx.mult(0) != null) {
         rightType = visit(ctx.mult(0));
-      } else if (ctx.minus() != null) {
-        rightType = visit(ctx.minus());
-      } else if (ctx.plus(0) != null) {
-        rightType = visit(ctx.plus(0));
+      } else if (ctx.plus() != null) {
+        rightType = visit(ctx.plus());
+      } else if (ctx.minus(0) != null) {
+        rightType = visit(ctx.minus(0));
       } else {
         rightType = visit(ctx.parNumExpr());
       }
@@ -751,17 +742,16 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
         rightType = visit(ctx.mult(1));
       } else if (ctx.value(0) != null) {
         rightType = visit(ctx.value(0));
-      } else if (ctx.minus() != null) {
-        rightType = visit(ctx.minus());
-      } else if (ctx.plus(0) != null) {
-        rightType = visit(ctx.plus(0));
+      } else if (ctx.plus() != null) {
+        rightType = visit(ctx.plus());
+      } else if (ctx.minus(0) != null) {
+        rightType = visit(ctx.minus(0));
       } else {
         rightType = visit(ctx.parNumExpr());
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof IntType)) {
       errorListener.reportError(
@@ -811,8 +801,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof IntType)) {
       errorListener.reportError(
@@ -871,8 +860,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    if (leftType == null || rightType == null)
-      return null;
+    if (leftType == null || rightType == null) return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType)) {
       errorListener.reportError(
@@ -892,7 +880,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
     }
 
-    return new IntType();
+    return new BoolType();
   }
 
   @Override
@@ -966,9 +954,32 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
           for (int cnt = 0; cnt < level + 1; cnt++) {
             sb.append(indents);
           }
-          sb.append("Ident: " + e.getKey() + " | type: " + e.getValue().getType() + "\n");
+          sb.append("variable: " + e.getKey() + " | type: " + e.getValue().getType() + "\n");
         });
 
     return sb.toString().substring(0, sb.length() - 1);
+  }
+
+  public String getIdentType(String id, int blockNumber) {
+    for (int i = blockNumber; i >= 0; i--) {
+      SymbolTable symbolTable = historicSymbolTables.get(i);
+      if (symbolTable.contains(id)) {
+        return symbolTable.get(id).getType();
+      }
+    }
+
+    return "";
+  }
+
+  public void addTablesToStack(int blockNumber) {
+    for (int i = 0; i <= blockNumber; i++) {
+      symbolTables.push(historicSymbolTables.get(i));
+    }
+  }
+
+  public void clearStack() {
+    while (!symbolTables.isEmpty()) {
+      symbolTables.pop();
+    }
   }
 }
