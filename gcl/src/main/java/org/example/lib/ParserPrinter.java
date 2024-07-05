@@ -8,14 +8,17 @@ import org.example.lib.types.ArrayType;
 import org.example.lib.types.Type;
 
 /**
- * La clase proporciona un método para generar una representación en cadena de un árbol sintáctico
+ * La clase proporciona un método para generar una representación en cadena de
+ * un árbol sintáctico
  * abstracto (AST) creado por un parser de ANTLR.
  */
 public class ParserPrinter {
   /** Constante que representa el salto de línea del sistema operativo. */
   public static final String Eol = System.lineSeparator();
 
-  /** Constante que representa la cadena utilizada para la sangría en la salida. */
+  /**
+   * Constante que representa la cadena utilizada para la sangría en la salida.
+   */
   public static final String Indents = "-";
 
   private static int level;
@@ -23,13 +26,18 @@ public class ParserPrinter {
   private static int blockNumber;
 
   /**
-   * Genera una representación en cadena del árbol sintáctico abstracto (AST) proporcionado.
+   * Genera una representación en cadena del árbol sintáctico abstracto (AST)
+   * proporcionado.
    *
-   * @param t El árbol sintáctico abstracto que se desea convertir en cadena.
-   * @param ruleNames Una lista que contiene los nombres de las reglas utilizadas por el analizador
-   *     ANTLR. El orden de los nombres de las reglas debe corresponder a los índices de las reglas
-   *     en el analizador.
-   * @return La representación en cadena del árbol AST, con sangría para mejorar la legibilidad.
+   * @param t         El árbol sintáctico abstracto que se desea convertir en
+   *                  cadena.
+   * @param ruleNames Una lista que contiene los nombres de las reglas utilizadas
+   *                  por el analizador
+   *                  ANTLR. El orden de los nombres de las reglas debe
+   *                  corresponder a los índices de las reglas
+   *                  en el analizador.
+   * @return La representación en cadena del árbol AST, con sangría para mejorar
+   *         la legibilidad.
    */
   public static String toStringTree(
       final Tree t, final List<String> ruleNames, TypeChekingVisitor visitor) {
@@ -90,89 +98,103 @@ public class ParserPrinter {
         if (ruleName.equals("comma")) {
           visitor.addTablesToStack(blockNumber);
           ArrayType type = (ArrayType) visitor.visitComma((GCLParser.CommaContext) t);
-          sb.append(" | type: " + type.getTypeVerbose());
+          if (type != null)
+            sb.append(" | type: " + type.getTypeVerbose());
         }
 
         if (ruleName.equals("equal")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitEqual((GCLParser.EqualContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("notEqual")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitNotEqual((GCLParser.NotEqualContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("less")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitLess((GCLParser.LessContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("leq")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitLeq((GCLParser.LeqContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("greater")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitGreater((GCLParser.GreaterContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("geq")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitGeq((GCLParser.GeqContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("and")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitAnd((GCLParser.AndContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("or")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitOr((GCLParser.OrContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("not")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitNot((GCLParser.NotContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("plus")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitPlus((GCLParser.PlusContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("mult")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitMult((GCLParser.MultContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("minus")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitMinus((GCLParser.MinusContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
 
         if (ruleName.equals("readArray")) {
           visitor.addTablesToStack(blockNumber);
           Type type = visitor.visitReadArray((GCLParser.ReadArrayContext) t);
-          sb.append(" | type: " + type.getType());
+          if (type != null)
+            sb.append(" | type: " + type.getType());
         }
-      }
 
-      visitor.clearStack();
+        visitor.clearStack();
+      }
 
       for (int i = 0; i < t.getChildCount(); i++) {
         if (!ruleName.equals("declare")) {

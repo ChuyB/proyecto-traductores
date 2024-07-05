@@ -100,7 +100,7 @@ to          : expr TkTo expr;
 print       : TkPrint (string | ident | concat);
 asig        : ident TkAsig ((expr | comma) | writeArray | readArray);
 if          : TkIf (then | guard) TkFi;
-for         : TkFor in TkArrow instruct TkRof;
+for         : TkFor in TkArrow (instruct | sequencing) TkRof;
 do          : TkDo (then | guard) TkOd;
 skip        : TkSkip;
 
