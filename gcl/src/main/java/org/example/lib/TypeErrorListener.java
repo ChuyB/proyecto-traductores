@@ -13,10 +13,12 @@ public class TypeErrorListener {
   }
 
   public void reportError(ParserRuleContext context, String message) {
-    int row = context.getStart().getLine();
-    int column = context.getStart().getCharPositionInLine() + 1;
-    sb.append(String.format("Error in row %d, column %d: %s\n", row, column, message));
-    errorCount++;
+    if (errorCount == 0) {
+      int row = context.getStart().getLine();
+      int column = context.getStart().getCharPositionInLine() + 1;
+      sb.append(String.format("%s at line %s and column %s\n", message, row, column));
+      errorCount++;
+    }
   }
 
   public boolean hayErrores() {
@@ -24,6 +26,6 @@ public class TypeErrorListener {
   }
 
   public void printErrores() {
-    System.out.println(sb.toString());
+    System.out.print(sb.toString());
   }
 }

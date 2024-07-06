@@ -59,19 +59,19 @@ parOr   : TkOpenPar or TkClosePar;
 plus
     : value TkPlus value
     | plus TkPlus (value | mult | parNumExpr)
-    | (value | minus | mult) TkPlus (value | minus | mult | plus | parNumExpr)
+    | (value | mult) TkPlus (value | mult | plus | parNumExpr)
     | TkOpenPar value TkPlus value TkClosePar
     | TkOpenPar plus TkPlus value TkClosePar
     | TkOpenPar plus TkPlus mult TkClosePar
-    | TkOpenPar (value | minus | mult) TkPlus (value | minus | mult | plus) TkClosePar;
+    | TkOpenPar (value | mult) TkPlus (value | mult | plus) TkClosePar;
 minus
     : value TkMinus value
     | minus TkMinus (value | mult | parNumExpr)
-    | (value | mult) TkMinus (value | minus | mult | parNumExpr)
+    | (value | plus | mult) TkMinus (value | plus | minus | mult | parNumExpr)
     | TkOpenPar value TkMinus value TkClosePar
     | TkOpenPar minus TkMinus value TkClosePar
     | TkOpenPar minus TkMinus mult TkClosePar
-    | TkOpenPar (value | mult) TkMinus (value | minus | mult) TkClosePar;
+    | TkOpenPar (value | plus | mult) TkMinus (value | plus | minus | mult) TkClosePar;
 parNumExpr
     : TkOpenPar plus TkClosePar
     | TkOpenPar minus TkClosePar

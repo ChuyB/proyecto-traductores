@@ -14,12 +14,12 @@ import org.example.lib.types.StringType;
 import org.example.lib.types.Type;
 
 /** GCLVisitor */
-public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
+public class TypeCheckingVisitor extends GCLBaseVisitor<Type> {
   private List<SymbolTable> historicSymbolTables;
   private Stack<SymbolTable> symbolTables;
   private TypeErrorListener errorListener;
 
-  public TypeChekingVisitor() {
+  public TypeCheckingVisitor() {
     this.symbolTables = new Stack<>();
     this.historicSymbolTables = new ArrayList<>();
     this.errorListener = new TypeErrorListener();
@@ -41,6 +41,64 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
   }
 
   @Override
+  public Type visitInstruct(GCLParser.InstructContext ctx) {
+    return visitChildren(ctx);
+  }
+
+  @Override
+  public Type visitSequencing(GCLParser.SequencingContext ctx) {
+    if (ctx.sequencing() != null) {
+      visit(ctx.sequencing());
+      visit(ctx.instruct(0));
+    } else {
+      visit(ctx.instruct(0));
+      visit(ctx.instruct(1));
+    }
+    return null;
+  }
+
+  @Override
+  public Type visitFor(GCLParser.ForContext ctx) {
+    symbolTables.push(new SymbolTable());
+    historicSymbolTables.add(symbolTables.peek());
+    visit(ctx.in());
+
+    if (ctx.instruct() != null) {
+      visit(ctx.instruct());
+    } else {
+      visit(ctx.sequencing());
+    }
+
+    symbolTables.pop();
+    return null;
+  }
+
+  @Override
+  public Type visitIn(GCLParser.InContext ctx) {
+    SymbolTable symbolTable = symbolTables.peek();
+    symbolTable.put(ctx.ident().getText(), new IntType());
+    Type toType = visit(ctx.to());
+
+    return toType;
+  }
+
+  @Override
+  public Type visitTo(GCLParser.ToContext ctx) {
+    Type expr1 = visit(ctx.expr(0));
+    Type expr2 = visit(ctx.expr(1));
+
+    if (expr1 == null || expr2 == null)
+      return null;
+
+    if (!(expr1 instanceof IntType) || !(expr2 instanceof IntType)) {
+      errorListener.reportError(ctx, "Type error");
+      return null;
+    }
+
+    return expr1;
+  }
+
+  @Override
   public Type visitDeclareBody(GCLParser.DeclareBodyContext ctx) {
     SymbolTable symbolTable = symbolTables.peek();
     Type type = visit(ctx.type());
@@ -48,7 +106,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       String id = ctx.TkId(i).getText();
 
       if (symbolTable.contains(id)) {
-        errorListener.reportError(ctx, String.format("Variable \"%s\" is already declared", id));
+        errorListener.reportError(ctx, String.format("Variable %s is already declared in the block", id));
       } else {
         symbolTable.put(id, type);
       }
@@ -85,7 +143,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       errorListener.reportError(
           ctx,
           String.format(
-              "Type mismatch: Array of length %d can not be assigned to array of length %d",
+              "Type error. Array of length %d can not be assigned to array of length %d",
               exprLength, identLenght));
       return identType;
     }
@@ -93,8 +151,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
     errorListener.reportError(
         ctx,
         String.format(
-            "Type mismatch: %s can not be assigned to variable \"%s\" of type %s",
-            exprType.getType(), ctx.ident().getText(), identType.getType()));
+            "Type error. Variable %s has different type than expression", ctx.ident().getText()));
     return identType;
   }
 
@@ -134,14 +191,14 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
     if (twoPointsType == null)
       return null;
     // try {
-    //   int index = Integer.parseInt(ctx.twoPoints().expr(0).getText());
-    //   if (index < identType.getStartIndex() || index > identType.getEndIndex()) {
-    //     errorListener.reportError(
-    //         ctx,
-    //         String.format(
-    //             "Index %d is out of bounds for array with bounds %d to %d",
-    //             index, identType.getStartIndex(), identType.getEndIndex()));
-    //   }
+    // int index = Integer.parseInt(ctx.twoPoints().expr(0).getText());
+    // if (index < identType.getStartIndex() || index > identType.getEndIndex()) {
+    // errorListener.reportError(
+    // ctx,
+    // String.format(
+    // "Index %d is out of bounds for array with bounds %d to %d",
+    // index, identType.getStartIndex(), identType.getEndIndex()));
+    // }
     // } finally {
     // }
     return identType;
@@ -187,7 +244,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       errorListener.reportError(
           ctx,
           String.format(
-              "Array index must be an integer, not an element of type %s", elementType.getType()));
+              "Error. Not integer index for array", elementType.getType()));
       return null;
     }
 
@@ -350,20 +407,12 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
 
     if (!(leftType instanceof BoolType) && leftType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not boolean or can't be casted to boolean",
-              leftType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
       return null;
     }
 
     if (!(rightType instanceof BoolType) && rightType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not boolean or can't be casted to boolean",
-              rightType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
       return null;
     }
 
@@ -397,7 +446,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return value;
     } else {
       if (value != null)
-        errorListener.reportError(ctx, "Operator \"not\" can only be applied to booleans");
+        errorListener.reportError(ctx, "Type error");
       return null;
     }
   }
@@ -448,20 +497,12 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
 
     if (!(leftType instanceof BoolType) && leftType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not boolean or can't be casted to boolean",
-              leftType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
       return null;
     }
 
     if (!(rightType instanceof BoolType) && rightType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not boolean or can't be casted to boolean",
-              rightType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
       return null;
     }
 
@@ -492,18 +533,12 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType) && leftType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not int or can't be casted to int", leftType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
       return null;
     }
 
     if (!(rightType instanceof IntType || rightType instanceof StringType) && rightType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not int or can't be casted to int", rightType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
       return null;
     }
 
@@ -534,18 +569,12 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType) && leftType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not int or can't be casted to int", leftType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
       return null;
     }
 
     if (!(rightType instanceof IntType || rightType instanceof StringType) && rightType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not int or can't be casted to int", rightType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
       return null;
     }
 
@@ -581,18 +610,12 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType) && leftType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not int or can't be casted to int", leftType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
       return null;
     }
 
     if (!(rightType instanceof IntType || rightType instanceof StringType) && rightType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not int or can't be casted to int", rightType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
       return null;
     }
 
@@ -623,18 +646,12 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType) && leftType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not int or can't be casted to int", leftType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
       return null;
     }
 
     if (!(rightType instanceof IntType || rightType instanceof StringType) && rightType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not int or can't be casted to int", rightType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
       return null;
     }
 
@@ -669,83 +686,16 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType) && leftType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not int or can't be casted to int", leftType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
       return null;
     }
 
     if (!(rightType instanceof IntType || rightType instanceof StringType) && rightType != null) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not int or can't be casted to int", rightType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
       return null;
     }
 
     return new BoolType();
-  }
-
-  @Override
-  public Type visitMinus(GCLParser.MinusContext ctx) {
-    Type leftType;
-    Type rightType;
-    if (ctx.minus() != null) {
-      leftType = visit(ctx.minus());
-      if (ctx.value(0) != null) {
-        rightType = visit(ctx.value(0));
-      } else if (ctx.mult(0) != null) {
-        rightType = visit(ctx.mult(0));
-      } else {
-        rightType = visit(ctx.parNumExpr());
-      }
-    } else if (ctx.value(0) != null) {
-      leftType = visit(ctx.value(0));
-      if (ctx.value(1) != null) {
-        rightType = visit(ctx.value(1));
-      } else if (ctx.mult(0) != null) {
-        rightType = visit(ctx.mult(0));
-      } else if (ctx.minus() != null) {
-        rightType = visit(ctx.minus());
-      } else {
-        rightType = visit(ctx.parNumExpr());
-      }
-    } else {
-      leftType = visit(ctx.mult(0));
-      if (ctx.mult(1) != null) {
-        rightType = visit(ctx.mult(1));
-      } else if (ctx.value(0) != null) {
-        rightType = visit(ctx.value(0));
-      } else if (ctx.minus() != null) {
-        rightType = visit(ctx.minus());
-      } else {
-        rightType = visit(ctx.parNumExpr());
-      }
-    }
-
-    if (leftType == null || rightType == null)
-      return null;
-
-    if (!(leftType instanceof IntType)) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not an integer or can't be casted to integer",
-              leftType.getType()));
-      return null;
-    }
-
-    if (!(rightType instanceof IntType)) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not an integer or can't be casted to integer",
-              rightType.getType()));
-      return null;
-    }
-
-    return new IntType();
   }
 
   @Override
@@ -758,21 +708,6 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
         rightType = visit(ctx.value(0));
       } else if (ctx.mult(0) != null) {
         rightType = visit(ctx.mult(0));
-      } else if (ctx.minus(0) != null) {
-        rightType = visit(ctx.minus(0));
-      } else {
-        rightType = visit(ctx.parNumExpr());
-      }
-    } else if (ctx.minus(0) != null) {
-      leftType = visit(ctx.minus(0));
-      if (ctx.value(0) != null) {
-        rightType = visit(ctx.value(0));
-      } else if (ctx.mult(0) != null) {
-        rightType = visit(ctx.mult(0));
-      } else if (ctx.minus(1) != null) {
-        rightType = visit(ctx.minus(1));
-      } else if (ctx.plus() != null) {
-        rightType = visit(ctx.plus());
       } else {
         rightType = visit(ctx.parNumExpr());
       }
@@ -784,8 +719,6 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
         rightType = visit(ctx.mult(0));
       } else if (ctx.plus() != null) {
         rightType = visit(ctx.plus());
-      } else if (ctx.minus(0) != null) {
-        rightType = visit(ctx.minus(0));
       } else {
         rightType = visit(ctx.parNumExpr());
       }
@@ -797,8 +730,6 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
         rightType = visit(ctx.value(0));
       } else if (ctx.plus() != null) {
         rightType = visit(ctx.plus());
-      } else if (ctx.minus(0) != null) {
-        rightType = visit(ctx.minus(0));
       } else {
         rightType = visit(ctx.parNumExpr());
       }
@@ -808,20 +739,84 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
 
     if (!(leftType instanceof IntType)) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not an integer or can't be casted to integer",
-              leftType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
       return null;
     }
 
     if (!(rightType instanceof IntType)) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not an integer or can't be casted to integer",
-              rightType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
+      return null;
+    }
+
+    return new IntType();
+  }
+
+  @Override
+  public Type visitMinus(GCLParser.MinusContext ctx) {
+    Type leftType;
+    Type rightType;
+    if (ctx.minus() != null) {
+      leftType = visit(ctx.minus());
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.mult(0) != null) {
+        rightType = visit(ctx.mult(0));
+      } else if (ctx.plus(0) != null) {
+        rightType = visit(ctx.plus(0));
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    } else if (ctx.plus(0) != null) {
+      leftType = visit(ctx.plus(0));
+      if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.mult(0) != null) {
+        rightType = visit(ctx.mult(0));
+      } else if (ctx.plus(1) != null) {
+        rightType = visit(ctx.plus(1));
+      } else if (ctx.minus() != null) {
+        rightType = visit(ctx.minus());
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    } else if (ctx.value(0) != null) {
+      leftType = visit(ctx.value(0));
+      if (ctx.value(1) != null) {
+        rightType = visit(ctx.value(1));
+      } else if (ctx.mult(0) != null) {
+        rightType = visit(ctx.mult(0));
+      } else if (ctx.minus() != null) {
+        rightType = visit(ctx.minus());
+      } else if (ctx.plus(0) != null) {
+        rightType = visit(ctx.plus(0));
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    } else {
+      leftType = visit(ctx.mult(0));
+      if (ctx.mult(1) != null) {
+        rightType = visit(ctx.mult(1));
+      } else if (ctx.value(0) != null) {
+        rightType = visit(ctx.value(0));
+      } else if (ctx.minus() != null) {
+        rightType = visit(ctx.minus());
+      } else if (ctx.plus(0) != null) {
+        rightType = visit(ctx.plus(0));
+      } else {
+        rightType = visit(ctx.parNumExpr());
+      }
+    }
+
+    if (leftType == null || rightType == null)
+      return null;
+
+    if (!(leftType instanceof IntType)) {
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
+      return null;
+    }
+
+    if (!(rightType instanceof IntType)) {
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
       return null;
     }
 
@@ -859,20 +854,12 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
 
     if (!(leftType instanceof IntType)) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not an integer or can't be casted to integer",
-              leftType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
       return null;
     }
 
     if (!(rightType instanceof IntType)) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not an integer or can't be casted to integer",
-              rightType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
       return null;
     }
 
@@ -891,7 +878,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return value;
     } else {
       if (value != null)
-        errorListener.reportError(ctx, "Unary minus can only be applied to integers");
+        errorListener.reportError(ctx, "Type error");
       return null;
     }
   }
@@ -920,20 +907,12 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       return null;
 
     if (!(leftType instanceof IntType || leftType instanceof StringType)) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not string or can't be casted to string",
-              leftType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", leftType.getType()));
       return null;
     }
 
     if (!(rightType instanceof IntType || rightType instanceof StringType)) {
-      errorListener.reportError(
-          ctx,
-          String.format(
-              "Expression of type %s is not string or can't be casted to string",
-              rightType.getType()));
+      errorListener.reportError(ctx, String.format("Type error", rightType.getType()));
       return null;
     }
 
@@ -994,7 +973,7 @@ public class TypeChekingVisitor extends GCLBaseVisitor<Type> {
       }
     }
 
-    errorListener.reportError(ctx, String.format("Variable \"%s\" is not declared", ctx.getText()));
+    errorListener.reportError(ctx, String.format("Variable not declared", ctx.getText()));
     return null;
   }
 

@@ -10,7 +10,7 @@ import org.example.lib.ManejadorArchivo;
 import org.example.lib.ManejadorErrorLexer;
 import org.example.lib.ManejadorErrorParser;
 import org.example.lib.ParserPrinter;
-import org.example.lib.TypeChekingVisitor;
+import org.example.lib.TypeCheckingVisitor;
 import org.example.lib.TypeErrorListener;
 
 public class App {
@@ -56,7 +56,7 @@ public class App {
     if (manejadorErroresParser.hayErrores())
       return;
 
-    TypeChekingVisitor visitor = new TypeChekingVisitor();
+    TypeCheckingVisitor visitor = new TypeCheckingVisitor();
     TypeErrorListener typeErrorListener = new TypeErrorListener();
     visitor.addErrorListener(typeErrorListener);
     visitor.visit(tree);
