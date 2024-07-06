@@ -69,6 +69,7 @@ public class App {
 
     // Imprime el árbol de análisis
     String stringTree = ParserPrinter.toStringTree(tree, ruleNamesList, visitor);
+    stringTree = "\n" + stringTree;
     System.out.println(stringTree.substring(2));
   }
 }
