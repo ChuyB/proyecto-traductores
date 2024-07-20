@@ -69,7 +69,7 @@ public class App {
       return;
     }
 
-    // Traduccion a PreApp
+    // Traduce el programa a PreApp
     GCLToPreAppTranslator translator = new GCLToPreAppTranslator();
     PreApp preApp = translator.translateProgram((GCLParser.ProgramContext) tree);
 
